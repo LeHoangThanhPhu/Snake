@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Snake Game - Random Skins & Play Button</title>
+<style>
+  /* Modern styling and improved graphics */
+  @import url('https://fonts.googleapis.com/css2?family=Poppins&display=swap');
+
+  body {
+    margin: 0;
+    background: linear-gradient(135deg, #1f4984, #604e7d);
+    font-family: 'Poppins', sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: #e0e7ff;
+    user-select: none;
+    height: 100vh;
+    justify-content: center;
+    padding: 20px;
+    box-sizing: border-box;
+  }
+  
+  #start-screen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(10,15,22,0.9);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 20;
+  }
+  
+  #start-screen h1 {
+    font-size: 3.5rem;
+    margin-bottom: 30px;
+    text-shadow: 0 0 15px #00ff8a;
+  }
+  
+  #play-button {
+    padding: 15px 50px;
+    font-size: 1.5rem;
+    background: #00ff8a;
+    color: #0d1524;
+    font-weight: 700;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    box-shadow: 0 0 30px #00ff8aaa;
+    transition: all 0.3s ease;
+    margin-bottom: 20px;
+  }
+  
+  #play-button:hover {
+    transform: scale(1.05);
+    background: #00cc6b;
+  }
+  
+  #skin-preview {
+    width: 200px;
+    height: 50px;
+    margin: 20px 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .skin-tile {
+    width: 30px;
+    height: 30px;
+    margin: 0 2px;
+    border-radius: 4px;
+    box-shadow: 0 0 5px rgba(0,0,0,0.5);
+  }
+
+  h1 {
+    margin-bottom: 8px;
+    font-weight: 700;
+    font-size: 2.5rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    text-shadow: 0 0 8px #0aff8d;
+  }
+  
+  #game-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 800px;
+  }
+
+  #score {
+    font-size: 1.3rem;
+    margin-bottom: 16px;
+    font-weight: 600;
+  }
+  
+  #game-container {
+    position: relative;
+    box-shadow: 0 0 60px #00ff8aaa;
+    border-radius: 16px;
+    overflow: hidden;
+    background: #244567;
+    width: 100%;
+    aspect-ratio: 1/1;
+    max-width: 600px;
+    max-height: 600px;
+  }
+  
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: #21365c;
+    box-shadow:
+      inset 0 0 50px #00ff8a33,
+      0 0 20px #00ff8aaa;
+  }
+
+  #game-over {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(10,15,22,0.95);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    font-size: 2.4rem;
+    font-weight: 700;
+    color: #00ff8a;
+    z-index: 10;
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  
+  #game-over.visible {
+    visibility: visible;
+    opacity: 1;
+  }
+  
+  #restart-button {
+    margin-top: 24px;
+    padding: 14px 40px;
+    font-size: 1.4rem;
+    background: #00ff8a;
+    color: #0d1524;
+    font-weight: 700;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    box-shadow: 0 0 30px #00ff8aaa;
+    transition: background 0.3s ease;
+  }
+  
+  #restart-button:hover,
+  #restart-button:focus {
+    background: #00cc6b;
+    outline: none;
+  }
+
+  /* Skill Button Styles */
+  #skills-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 16px;
+    width: 100%;
+    max-width: 600px;
+  }
+  
+  #skill-button, #clone-button {
+    margin-top: 16px;
+    padding: 12px 24px;
+    font-size: 1rem;
+    background: #111;
+    border: 2px solid #00ff8a;
+    color: #26b673;
+    font-weight: 700;
+    border-radius: 10px;
+    cursor: pointer;
+    box-shadow: 0 0 15px #00ff8a55;
+    user-select: none;
+    position: relative;
+    min-width: 140px;
+    margin-right: 10px;
+  }
+  
+  #skill-button:disabled, #clone-button:disabled {
+    border-color: #d8d8d8;
+    color: #004d29;
+    box-shadow: none;
+    cursor: not-allowed;
+  }
+  
+  #skill-button.enabled:hover, #skill-button.enabled:focus,
+  #clone-button.enabled:hover, #clone-button.enabled:focus {
+    background: #00ff8a;
+    color: #0d1524;
+    outline: none;
+  }
+  
+  .cooldown-text {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: #00ff8a;
+    user-select: none;
+  }
+
+  #warning {
+    margin-top: 16px;
+    font-weight: 700;
+    font-size: 1.2rem;
+    color: #e26565;
+    min-height: 28px;
+    user-select: none;
+    text-shadow: 0 0 4px #e26565cc;
+    text-align: center;
+  }
+
+  /* Responsive */
+  @media (max-width: 680px) {
+    #start-screen h1 {
+      font-size: 2.5rem;
+      text-align: center;
+    }
+    
+    #skill-button, #clone-button {
+      min-width: 120px;
+      font-size: 0.9rem;
+      padding: 10px 15px;
+    }
+  }
+</style>
+</head>
+<body>
+  <div id="start-screen">
+    <h1>Snake Game<br>Enhanced</h1>
+    <div id="skin-preview"></div>
+    <button id="play-button">PLAY</button>
+    <div style="text-align: center; max-width: 400px;">
+      <p>Use Arrow Keys or WASD to move</p>
+      <p>Space: Invincibility | Z: Clone</p>
+    </div>
+  </div>
+
+  <div id="game-wrapper">
+    <h1>Snake Game</h1>
+    <div id="score" aria-live="polite" aria-atomic="true">Score: 0</div>
+    <div id="game-container">
+      <canvas id="gameCanvas" aria-label="Snake game area" role="img" tabindex="0"></canvas>
+      <div id="game-over" role="alert" aria-live="assertive">
+        Game Over
+        <button id="restart-button" aria-label="Restart Game">Restart</button>
+      </div>
+    </div>
+
+    <div id="skills-container">
+      <button id="skill-button" disabled aria-live="polite" aria-atomic="true" aria-label="Activate invincibility skill when available">
+        Invincible Skill
+        <span class="cooldown-text" id="skill-cooldown-text"></span>
+      </button>
+      <button id="clone-button" disabled aria-live="polite" aria-atomic="true" aria-label="Activate cloning skill when available (Press Z key)">
+        Clone Skill (Z)
+        <span class="cooldown-text" id="clone-cooldown-text"></span>
+      </button>
+    </div>
+
+    <div id="warning" aria-live="assertive"></div>
+  </div>
+
+<script>
+  // Game elements
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+  const scoreDisplay = document.getElementById('score');
+  const gameOverOverlay = document.getElementById('game-over');
+  const restartButton = document.getElementById('restart-button');
+  const skillButton = document.getElementById('skill-button');
+  const skillCooldownText = document.getElementById('skill-cooldown-text');
+  const cloneButton = document.getElementById('clone-button');
+  const cloneCooldownText = document.getElementById('clone-cooldown-text');
+  const warningText = document.getElementById('warning');
+  const playButton = document.getElementById('play-button');
+  const startScreen = document.getElementById('start-screen');
+  const skinPreview = document.getElementById('skin-preview');
+
+  // Set canvas size based on container
+  function resizeCanvas() {
+    const container = document.getElementById('game-container');
+    canvas.width = container.clientWidth;
+    canvas.height = container.clientHeight;
+  }
+  
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+
+  const tileCount = 30;
+  let tileSize = canvas.width / tileCount;
+
+  // Player snake
+  let snake = [{x: 15, y: 15}];
+  let velocityX = 0;
+  let velocityY = 0;
+
+  // Clone snake
+  let cloneSnake = [];
+  let cloneVelocityX = 0;
+  let cloneVelocityY = 0;
+  let cloneActive = false;
+  let cloneTimer = null;
+  let cloneMoveInterval = null;
+
+  // Opponent snake
+  let opponentSnake = [];
+  let opponentVelocityX = 1;
+  let opponentVelocityY = 0;
+  let opponentActive = false;
+  let opponentMoveInterval = null;
+
+  // Food
+  let food = {x: 5, y: 5, color: '#00ff8a'};
+
+  // Meteor related
+  let meteor = null;
+  let meteorWarningShown = false;
+  let meteorActive = false;
+  let meteorWarningTimer = null;
+  let meteorAppearTimeout = null;
+  let meteorDisappearTimeout = null;
+  const meteorRadius = 4;
+
+  // Game state
+  let score = 0;
+  let gameRunning = false;
+  let gameLoopInterval = null;
+
+  // Invincibility skill
+  let invincible = false;
+  let skillAvailable = false;
+  let skillCooldown = 0;
+  let invincibleTimeout = null;
+  let skillCooldownInterval = null;
+
+  // Clone skill
+  let cloneSkillAvailable = false;
+  let cloneCooldown = 0;
+  let cloneCooldownInterval = null;
+
+  // Opponent appear timer
+  let opponentAppearTimeout = null;
+
+  // Snake skins
+  const snakeSkins = [
+    {
+      head: '#00ffaa',
+      body: '#009933',
+      tail: '#004422',
+      glow: '#00ffaa'
+    },
+    {
+      head: '#ff3c00',
+      body: '#cc2e00',
+      tail: '#992100',
+      glow: '#ff5500'
+    },
+    {
+      head: '#ffd500',
+      body: '#e6c000',
+      tail: '#ccaa00',
+      glow: '#ffea00'
+    },
+    {
+      head: '#0066ff',
+      body: '#0055cc',
+      tail: '#004499',
+      glow: '#0088ff'
+    },
+    {
+      head: '#ff00ff',
+      body: '#cc00cc',
+      tail: '#990099',
+      glow: '#ff66ff'
+    }
+  ];
+  
+  let currentSkin = snakeSkins[0];
+
+  // Randomize skin
+  function randomizeSkin() {
+    currentSkin = snakeSkins[Math.floor(Math.random() * snakeSkins.length)];
+    updateSkinPreview();
+  }
+  
+  // Update skin preview
+  function updateSkinPreview() {
+    skinPreview.innerHTML = '';
+    for (let i = 0; i < 5; i++) {
+      const color = i === 0 ? currentSkin.head : 
+                   i === 4 ? currentSkin.tail : currentSkin.body;
+      const tile = document.createElement('div');
+      tile.className = 'skin-tile';
+      tile.style.backgroundColor = color;
+      tile.style.boxShadow = `0 0 8px ${currentSkin.glow}`;
+      skinPreview.appendChild(tile);
+    }
+  }
+
+  // Initialize random skin
+  randomizeSkin();
+
+  // Drawing helpers
+  function drawRect(x, y, color, glowColor, lineWidth = 0) {
+    ctx.fillStyle = color;
+    ctx.shadowColor = glowColor || color;
+    ctx.shadowBlur = 15;
+    ctx.fillRect(x, y, tileSize - 2, tileSize - 2);
+    ctx.shadowBlur = 0;
+    if (lineWidth > 0) {
+      ctx.lineWidth = lineWidth;
+      ctx.strokeStyle = glowColor || 'white';
+      ctx.strokeRect(x, y, tileSize - 2, tileSize - 2);
+    }
+  }
+
+  // Draw game elements
+  function drawGame() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Background gradient
+    const bgGradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+    bgGradient.addColorStop(0, '#0d1524');
+    bgGradient.addColorStop(1, '#112233');
+    ctx.fillStyle = bgGradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Draw meteor if active
+    if (meteorActive && meteor) {
+      ctx.fillStyle = 'rgba(255, 69, 0, 0.4)';
+      ctx.beginPath();
+      ctx.arc((meteor.x + 0.5) * tileSize, (meteor.y + 0.5) * tileSize, meteorRadius * tileSize, 0, Math.PI * 2);
+      ctx.fill();
+      drawRect(meteor.x * tileSize, meteor.y * tileSize, '#ff4500', '#ff6a30', 3);
+    }
+
+    // Draw food with glow
+    drawRect(food.x * tileSize, food.y * tileSize, food.color, food.color);
+
+    // Draw opponent snake if active
+    if (opponentActive) {
+      opponentSnake.forEach((segment, i) => {
+        let col = i === 0 ? '#ff0000' : '#aa0000';
+        drawRect(segment.x * tileSize, segment.y * tileSize, col, '#ff5555');
+      });
+    }
+
+    // Draw clone snake if active
+    if (cloneActive) {
+      cloneSnake.forEach((segment, i) => {
+        let col = i === 0 ? '#00aaff' : '#005577';
+        drawRect(segment.x * tileSize, segment.y * tileSize, col, '#00ccff');
+      });
+    }
+
+    // Draw snake with current skin
+    snake.forEach((segment, i) => {
+      let color;
+      if (i === 0) {
+        color = currentSkin.head; // Head
+      } else if (i === snake.length - 1) {
+        color = currentSkin.tail; // Tail
+      } else {
+        color = currentSkin.body; // Body
+      }
+      
+      ctx.fillStyle = color;
+      ctx.shadowColor = currentSkin.glow;
+      ctx.shadowBlur = 20;
+      ctx.fillRect(segment.x * tileSize + 1, segment.y * tileSize + 1, tileSize - 2, tileSize - 2);
+      ctx.shadowBlur = 0;
+
+      if (invincible && i === 0) {
+        ctx.strokeStyle = '#00ffe0';
+        ctx.lineWidth = 4;
+        ctx.strokeRect(segment.x * tileSize + 2, segment.y * tileSize + 2, tileSize - 4, tileSize - 4);
+      }
+    });
+  }
+
+  // Movement functions
+  function moveSnake() {
+    if (!gameRunning) return;
+
+    let head = {...snake[0]};
+    head.x = (head.x + velocityX + tileCount) % tileCount;
+    head.y = (head.y + velocityY + tileCount) % tileCount;
+
+    if (!invincible && snake.some((seg, i) => i !== 0 && seg.x === head.x && seg.y === head.y)) {
+      endGame();
+      return;
+    }
+
+    if (opponentActive) {
+      let collisionWithOpponent = opponentSnake.some(seg => seg.x === head.x && seg.y === head.y);
+      if (collisionWithOpponent) {
+        endGame();
+        return;
+      }
+    }
+
+    if (meteorActive && meteor) {
+      let dx = Math.abs(head.x - meteor.x);
+      let dy = Math.abs(head.y - meteor.y);
+      if (!invincible && dx <= meteorRadius && dy <= meteorRadius) {
+        endGame();
+        return;
+      }
+    }
+
+    snake.unshift(head);
+
+    if (head.x === food.x && head.y === food.y) {
+      score++;
+      updateScore();
+      placeFood();
+    } else {
+      snake.pop();
+    }
+  }
+
+  // Clone snake now hunts food
+  function moveCloneSnakeToFood() {
+    if (!cloneActive || cloneSnake.length === 0) return;
+
+    const head = {...cloneSnake[0]};
+    let dx = food.x - head.x;
+    let dy = food.y - head.y;
+
+    // Wrap-around adjustment for shortest path
+    if (dx > tileCount / 2) dx -= tileCount;
+    else if (dx < -tileCount / 2) dx += tileCount;
+
+    if (dy > tileCount / 2) dy -= tileCount;
+    else if (dy < -tileCount / 2) dy += tileCount;
+
+    // Choose axis with max distance
+    if (Math.abs(dx) > Math.abs(dy)) {
+      cloneVelocityX = dx > 0 ? 1 : -1;
+      cloneVelocityY = 0;
+    } else {
+      cloneVelocityX = 0;
+      cloneVelocityY = dy > 0 ? 1 : -1;
+    }
+
+    let newHeadX = (head.x + cloneVelocityX + tileCount) % tileCount;
+    let newHeadY = (head.y + cloneVelocityY + tileCount) % tileCount;
+
+    // Prevent self collision
+    if (cloneSnake.some((seg, i) => i !== 0 && seg.x === newHeadX && seg.y === newHeadY)) {
+      const dirs = [
+        {x: 0, y: -1},
+        {x: 0, y: 1},
+        {x: -1, y: 0},
+        {x: 1, y: 0}
+      ];
+      
+      let validDir = dirs.find(d => {
+        let testX = (head.x + d.x + tileCount) % tileCount;
+        let testY = (head.y + d.y + tileCount) % tileCount;
+        return !cloneSnake.some(seg => seg.x === testX && seg.y === testY);
+      });
+      
+      if (validDir) {
+        cloneVelocityX = validDir.x;
+        cloneVelocityY = validDir.y;
+        newHeadX = (head.x + cloneVelocityX + tileCount) % tileCount;
+        newHeadY = (head.y + cloneVelocityY + tileCount) % tileCount;
+      }
+    }
+
+    cloneSnake.unshift({x: newHeadX, y: newHeadY});
+    
+    // Clone can eat food and grow
+    if (newHeadX === food.x && newHeadY === food.y) {
+      score += 2; // Double points for clone eating food
+      updateScore();
+      placeFood();
+    } else {
+      cloneSnake.pop();
+    }
+  }
+
+  // Opponent snake AI
+  function moveOpponentSnakeAI() {
+    if (!opponentActive || opponentSnake.length === 0) return;
+
+    const head = {...opponentSnake[0]};
+    const target = snake[0];
+
+    let dx = target.x - head.x;
+    let dy = target.y - head.y;
+
+    // Wrap-around adjustment for shortest path
+    if (dx > tileCount / 2) dx -= tileCount;
+    else if (dx < -tileCount / 2) dx += tileCount;
+
+    if (dy > tileCount / 2) dy -= tileCount;
+    else if (dy < -tileCount / 2) dy += tileCount;
+
+    // Choose axis with max distance
+    if (Math.abs(dx) > Math.abs(dy)) {
+      opponentVelocityX = dx > 0 ? 1 : -1;
+      opponentVelocityY = 0;
+    } else {
+      opponentVelocityX = 0;
+      opponentVelocityY = dy > 0 ? 1 : -1;
+    }
+
+    let newHeadX = (head.x + opponentVelocityX + tileCount) % tileCount;
+    let newHeadY = (head.y + opponentVelocityY + tileCount) % tileCount;
+
+    // Prevent self collision
+    if (opponentSnake.some(seg => seg.x === newHeadX && seg.y === newHeadY)) {
+      const dirs = [
+        {x: 0, y: -1},
+        {x: 0, y: 1},
+        {x: -1, y: 0},
+        {x: 1, y: 0}
+      ];
+      let validDir = dirs.find(d => {
+        let testX = (head.x + d.x + tileCount) % tileCount;
+        let testY = (head.y + d.y + tileCount) % tileCount;
+        return !opponentSnake.some(seg => seg.x === testX && seg.y === testY);
+      });
+      if (validDir) {
+        opponentVelocityX = validDir.x;
+        opponentVelocityY = validDir.y;
+        newHeadX = (head.x + opponentVelocityX + tileCount) % tileCount;
+        newHeadY = (head.y + opponentVelocityY + tileCount) % tileCount;
+      }
+    }
+
+    opponentSnake.unshift({x: newHeadX, y: newHeadY});
+    opponentSnake.pop();
+  }
+
+  // Place food avoiding all snakes and meteor
+  function placeFood() {
+    let valid = false;
+    while (!valid) {
+      let x = Math.floor(Math.random() * tileCount);
+      let y = Math.floor(Math.random() * tileCount);
+      if (snake.some(seg => seg.x === x && seg.y === y)) continue;
+      if (cloneActive && cloneSnake.some(seg => seg.x === x && seg.y === y)) continue;
+      if (opponentActive && opponentSnake.some(seg => seg.x === x && seg.y === y)) continue;
+      if (meteorActive && meteor && Math.abs(x - meteor.x) <= meteorRadius && Math.abs(y - meteor.y) <= meteorRadius) continue;
+      valid = true;
+      food.x = x;
+      food.y = y;
+      food.color = randomBrightColor();
+    }
+  }
+
+  function randomBrightColor() {
+    const colors = ['#00ff8a', '#ff3c00', '#ffd500', '#0066ff', '#ff00ff'];
+    return colors[Math.floor(Math.random() * colors.length)];
+  }
+
+  // Score update
+  function updateScore() {
+    scoreDisplay.textContent = 'Score: ' + score;
+  }
+
+  // Invincible skill activation
+  function activateSkill() {
+    if (!skillAvailable) return;
+    invincible = true;
+    skillAvailable = false;
+    skillCooldown = 10;
+    updateSkillUI();
+
+    invincibleTimeout = setTimeout(() => {
+      invincible = false;
+      updateSkillUI();
+    }, 3000);
+
+    skillCooldownInterval = setInterval(() => {
+      skillCooldown--;
+      if (skillCooldown <= 0) {
+        clearInterval(skillCooldownInterval);
+        skillAvailable = true;
+        updateSkillUI();
+      } else {
+        updateSkillUI();
+      }
+    }, 1000);
+  }
+
+  // Clone skill activation
+  function activateCloneSkill() {
+    if (!cloneSkillAvailable || cloneActive || snake.length < 4) return;
+    let splitIndex = Math.floor(snake.length / 2);
+    cloneSnake = snake.splice(splitIndex);
+
+    cloneActive = true;
+    cloneVelocityX = 0;
+    cloneVelocityY = 0;
+    cloneSkillAvailable = false;
+    cloneCooldown = 20;
+
+    // Clone moves to hunt food every 200ms
+    cloneMoveInterval = setInterval(() => {
+      if (!cloneActive) return clearInterval(cloneMoveInterval);
+      moveCloneSnakeToFood();
+    }, 200);
+
+    // Clone active for 10 seconds, then merge back
+    cloneTimer = setTimeout(() => {
+      snake = snake.concat(cloneSnake);
+      cloneActive = false;
+      cloneSnake = [];
+      cloneVelocityX = 0;
+      cloneVelocityY = 0;
+      updateCloneUI();
+      clearInterval(cloneMoveInterval);
+    }, 10000);
+
+    cloneCooldownInterval = setInterval(() => {
+      cloneCooldown--;
+      if (cloneCooldown <= 0) {
+        cloneSkillAvailable = true;
+        clearInterval(cloneCooldownInterval);
+        updateCloneUI();
+      } else {
+        updateCloneUI();
+      }
+    }, 1000);
+
+    updateCloneUI();
+  }
+
+  // Update skill button UI
+  function updateSkillUI() {
+    if (skillAvailable) {
+      skillButton.disabled = false;
+      skillButton.classList.add('enabled');
+      skillCooldownText.textContent = '';
+      skillButton.textContent = 'Invincible Skill';
+      skillButton.appendChild(skillCooldownText);
+    } else {
+      skillButton.disabled = true;
+      skillButton.classList.remove('enabled');
+      skillCooldownText.textContent = invincible ? 'ACTIVE' : skillCooldown + 's';
+      skillButton.textContent = 'Invincible Skill ';
+      skillButton.appendChild(skillCooldownText);
+    }
+  }
+
+  // Update clone button UI
+  function updateCloneUI() {
+    if (cloneSkillAvailable) {
+      cloneButton.disabled = false;
+      cloneButton.classList.add('enabled');
+      cloneCooldownText.textContent = '';
+      cloneButton.textContent = 'Clone Skill (Z)';
+      cloneButton.appendChild(cloneCooldownText);
+    } else {
+      cloneButton.disabled = true;
+      cloneButton.classList.remove('enabled');
+      cloneCooldownText.textContent = cloneActive ? 'ACTIVE' : cloneCooldown + 's';
+      cloneButton.textContent = 'Clone Skill (Z) ';
+      cloneButton.appendChild(cloneCooldownText);
+    }
+  }
+
+  // Schedule meteor with repeated 10 seconds intervals
+  function scheduleMeteor() {
+    if (!gameRunning) return;
+
+    meteorWarningShown = false;
+    meteorActive = false;
+    meteor = null;
+    clearWarning();
+
+    meteorWarningTimer = setTimeout(() => {
+      let x,y;
+      do {
+        x = Math.floor(Math.random() * tileCount);
+        y = Math.floor(Math.random() * tileCount);
+      } while (snake.some(seg => Math.abs(seg.x - x) <= meteorRadius && Math.abs(seg.y - y) <= meteorRadius));
+
+      meteor = {x,y};
+      meteorWarningShown = true;
+      showMeteorWarning(x,y);
+    }, 7000);
+
+    meteorAppearTimeout = setTimeout(() => {
+      meteorActive = true;
+      clearWarning();
+
+      meteorDisappearTimeout = setTimeout(() => {
+        meteorActive = false;
+        meteor = null;
+        // Schedule next meteor in 10 seconds after disappearance
+        scheduleMeteor();
+      }, 2000);
+    }, 10000);
+  }
+
+  // Show meteor warning text with coordinates (1-based)
+  function showMeteorWarning(x, y) {
+    warningText.textContent = `Meteor will fall at (${x + 1},${y + 1}) in 3 seconds!`;
+  }
+
+  // Clear warning text
+  function clearWarning() {
+    warningText.textContent = '';
+  }
+
+  // Initialize opponent snake on top left, length 8, moving right slowly
+  function initOpponentSnake() {
+    opponentSnake = [];
+    for(let i=7; i>=0; i--) {
+      opponentSnake.push({x:i, y:0});
+    }
+    opponentActive = true;
+
+    if(opponentMoveInterval) clearInterval(opponentMoveInterval);
+    // Opponent moves at half player speed (every 200ms)
+    opponentMoveInterval = setInterval(() => {
+      if(gameRunning && opponentActive) {
+        moveOpponentSnakeAI();
+      }
+    }, 200);
+  }
+
+  // Game over
+  function endGame() {
+    gameRunning = false;
+    clearInterval(gameLoopInterval);
+    clearInterval(skillCooldownInterval);
+    clearInterval(cloneCooldownInterval);
+    clearTimeout(invincibleTimeout);
+    clearTimeout(meteorWarningTimer);
+    clearTimeout(meteorAppearTimeout);
+    clearTimeout(meteorDisappearTimeout);
+    clearTimeout(cloneTimer);
+    clearInterval(cloneMoveInterval);
+    clearTimeout(opponentAppearTimeout);
+    clearInterval(opponentMoveInterval);
+    warningText.textContent = '';
+    gameOverOverlay.classList.add('visible');
+    skillAvailable = false;
+    cloneSkillAvailable = false;
+    updateSkillUI();
+    updateCloneUI();
+    restartButton.focus();
+  }
+
+  // Game tick - player snake moves every 100ms
+  function gameTick() {
+    moveSnake();
+    drawGame();
+  }
+
+  // Start game
+  function startGame() {
+    // Hide start screen
+    startScreen.style.display = 'none';
+    
+    // Randomize skin for new game
+    randomizeSkin();
+    
+    gameRunning = true;
+    score = 0;
+    velocityX = 0;
+    velocityY = 0;
+    snake = [{x: 15, y: 15}];
+    invincible = false;
+
+    cloneSnake = [];
+    cloneActive = false;
+    cloneVelocityX = 0;
+    cloneVelocityY = 0;
+
+    opponentActive = false;
+    opponentSnake = [];
+    clearInterval(opponentMoveInterval);
+
+    clearTimeout(meteorWarningTimer);
+    clearTimeout(meteorAppearTimeout);
+    clearTimeout(meteorDisappearTimeout);
+    clearTimeout(invincibleTimeout);
+    clearInterval(skillCooldownInterval);
+    clearInterval(cloneCooldownInterval);
+    clearTimeout(cloneTimer);
+    cloneMoveInterval = null;
+
+    meteor = null;
+    meteorActive = false;
+    meteorWarningShown = false;
+    clearWarning();
+
+    skillAvailable = true;
+    skillCooldown = 0;
+    cloneSkillAvailable = true;
+    cloneCooldown = 0;
+
+    updateSkillUI();
+    updateCloneUI();
+    placeFood();
+    updateScore();
+    
+    // Recalculate tile size in case of resize
+    tileSize = canvas.width / tileCount;
+    
+    drawGame();
+    gameOverOverlay.classList.remove('visible');
+
+    gameLoopInterval = setInterval(gameTick, 100);
+
+    scheduleMeteor();
+
+    opponentAppearTimeout = setTimeout(() => {
+      initOpponentSnake();
+    }, 50000);
+    
+    // Focus canvas for keyboard controls
+    canvas.focus();
+  }
+
+  // Restart game
+  function restartGame() {
+    endGame();
+    startGame();
+  }
+
+  // Event listeners
+  playButton.addEventListener('click', startGame);
+  restartButton.addEventListener('click', restartGame);
+  skillButton.addEventListener('click', activateSkill);
+  cloneButton.addEventListener('click', activateCloneSkill);
+
+  // Keyboard input
+  window.addEventListener('keydown', e => {
+    if (!gameRunning && ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','a','s','d','W','A','S','D',' ', 'z', 'Z'].includes(e.key)) {
+      startGame();
+    }
+    if (!gameRunning) return;
+
+    switch(e.key) {
+      case 'ArrowUp':
+      case 'w':
+      case 'W':
+        if (velocityY !== 1) { velocityX=0; velocityY=-1; }
+        break;
+      case 'ArrowDown':
+      case 's':
+      case 'S':
+        if (velocityY !== -1) { velocityX=0; velocityY=1; }
+        break;
+      case 'ArrowLeft':
+      case 'a':
+      case 'A':
+        if (velocityX !== 1) { velocityX=-1; velocityY=0; }
+        break;
+      case 'ArrowRight':
+      case 'd':
+      case 'D':
+        if (velocityX !== -1) { velocityX=1; velocityY=0; }
+        break;
+      case ' ':
+        e.preventDefault();
+        if(skillAvailable) activateSkill();
+        break;
+      case 'z':
+      case 'Z':
+        if(cloneSkillAvailable) activateCloneSkill();
+        break;
+    }
+  });
+
+  // Initial draw
+  drawGame();
+  updateSkillUI();
+  updateCloneUI();
+</script>
+</body>
+</html>
